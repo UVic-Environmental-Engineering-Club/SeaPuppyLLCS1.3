@@ -1096,10 +1096,11 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOG_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOF, Pitch_En_3V3_Pin|Pitch_Dir_3V3_Pin|Roll_DIR_Pin|En_24V_ADC_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, Pump_En_Pin|Brake_En_Pin|Enable_24V_Pin|Enable_11V_Pin
+                          |Pump_Dir_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, Brake_En_Pin|Enable_24V_Pin|Enable_11V_Pin|Pump_Dir_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOF, Pitch_En_3V3_Pin|Pitch_Dir_3V3_Pin|Roll_DIR_Pin|En_24V_ADC_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, LD1_Pin|LD3_Pin|LD2_Pin, GPIO_PIN_RESET);
@@ -1110,11 +1111,14 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(CAN_Set_Zero_GPIO_Port, CAN_Set_Zero_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : Usr_Btn_Pin */
-  GPIO_InitStruct.Pin = Usr_Btn_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(Usr_Btn_GPIO_Port, &GPIO_InitStruct);
+  /*Configure GPIO pins : Pump_En_Pin Brake_En_Pin Enable_24V_Pin Enable_11V_Pin
+                           Pump_Dir_Pin */
+  GPIO_InitStruct.Pin = Pump_En_Pin|Brake_En_Pin|Enable_24V_Pin|Enable_11V_Pin
+                          |Pump_Dir_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pins : Pitch_En_3V3_Pin Pitch_Dir_3V3_Pin Roll_DIR_Pin En_24V_ADC_Pin */
   GPIO_InitStruct.Pin = Pitch_En_3V3_Pin|Pitch_Dir_3V3_Pin|Roll_DIR_Pin|En_24V_ADC_Pin;
@@ -1122,13 +1126,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : Brake_En_Pin Enable_24V_Pin Enable_11V_Pin Pump_Dir_Pin */
-  GPIO_InitStruct.Pin = Brake_En_Pin|Enable_24V_Pin|Enable_11V_Pin|Pump_Dir_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LD1_Pin LD3_Pin LD2_Pin */
   GPIO_InitStruct.Pin = LD1_Pin|LD3_Pin|LD2_Pin;
@@ -1297,7 +1294,8 @@ void StartActuate(void *argument)
 	  else if (distance > max_tof_distance) {
 		  change_pitch_direction(1);
 	  }
-	  if (HAL_GPIO_ReadPin(Usr_Btn_GPIO_Port, Usr_Btn_Pin) == GPIO_PIN_RESET) {
+
+	/*  if (HAL_GPIO_ReadPin(Usr_Btn_GPIO_Port, Usr_Btn_Pin) == GPIO_PIN_RESET) {
 		  // Button is pressed
 		  if (pitch_direction == 1) {
 		  		  change_pitch_direction(0);
@@ -1305,7 +1303,7 @@ void StartActuate(void *argument)
 		  	  else if (pitch_direction == 0) {
 		  		  change_pitch_direction(1);
 		  	  }
-	  }
+	  }*/
   }
   /* USER CODE END StartActuate */
 }
