@@ -135,6 +135,18 @@ const osThreadAttr_t rollEncoderTask_attributes = {
   .stack_size = sizeof(rollEncoderTaskBuffer),
   .priority = (osPriority_t) osPriorityNormal,
 };
+/* Definitions for pumpActuateTask */
+osThreadId_t pumpActuateTaskHandle;
+uint32_t pumpActuateTaskBuffer[ 128 ];
+osStaticThreadDef_t pumpActuateTaskControlBlock;
+const osThreadAttr_t pumpActuateTask_attributes = {
+  .name = "pumpActuateTask",
+  .cb_mem = &pumpActuateTaskControlBlock,
+  .cb_size = sizeof(pumpActuateTaskControlBlock),
+  .stack_mem = &pumpActuateTaskBuffer[0],
+  .stack_size = sizeof(pumpActuateTaskBuffer),
+  .priority = (osPriority_t) osPriorityLow,
+};
 /* USER CODE BEGIN PV */
 rcl_node_t node;
 rclc_support_t support;
@@ -155,6 +167,9 @@ const unsigned int timer_period = RCL_MS_TO_NS(10);
 const int timeout_ms = 1000;
 const float min_tof_distance = 40.7;
 const float max_tof_distance = 161.6;
+
+const int pitch_pul_duty_cycle = 32765;
+const int pump_pul_duty_cycle = 32765;
 
 int32_t blinkCounter = 5;
 float depthsensor = 0;
@@ -190,6 +205,7 @@ void StartDefaultTask(void *argument);
 void StartActuate(void *argument);
 void StartDistTask(void *argument);
 void StartRollTask(void *argument);
+void StartPumpActuateTask(void *argument);
 
 /* USER CODE BEGIN PFP */
 void subscription_callback(const void *msgin);
@@ -269,21 +285,21 @@ float get_angle_deg(void) {
 
 int change_pitch_direction(int dir) {
 	if (pitch_direction == 0 && dir == 1) { // pitch motor is getting closer to tof
-		HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_4);
+		TIM4->CCR4 = 0; //Stop PWM
 		HAL_Delay(100);
 		HAL_GPIO_WritePin(Pitch_Dir_3V3_GPIO_Port, Pitch_Dir_3V3_Pin, GPIO_PIN_SET);
 		HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
 		HAL_Delay(100);
-		HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
+		TIM4->CCR4 = pitch_pul_duty_cycle; // Start PWM
 		pitch_direction = 1;
 		return 1;
 	} else if (pitch_direction == 1 && dir == 0) { // pitch motor is getting further from tof
-		HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_4);
+		TIM4->CCR4 = 0; //Stop PWM
 		HAL_Delay(100);
 		HAL_GPIO_WritePin(Pitch_Dir_3V3_GPIO_Port, Pitch_Dir_3V3_Pin, GPIO_PIN_RESET);
 		HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
 		HAL_Delay(100);
-		HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
+		TIM4->CCR4 = pitch_pul_duty_cycle; // Start PWM
 		pitch_direction = 0;
 		return 0;
 	}
@@ -356,6 +372,11 @@ int main(void)
   htim2.Instance->CCR3 = 4095;
   HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_3);
   HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
+
+  htim4->Instance->CCR4 = 0; //Start with pitch pul stopped
+  htim4->Instance->CCR3 = 0; //Start with pump pul stopped
+  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
+
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -389,6 +410,9 @@ int main(void)
 
   /* creation of rollEncoderTask */
   rollEncoderTaskHandle = osThreadNew(StartRollTask, NULL, &rollEncoderTask_attributes);
+
+  /* creation of pumpActuateTask */
+  pumpActuateTaskHandle = osThreadNew(StartPumpActuateTask, NULL, &pumpActuateTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -1283,7 +1307,7 @@ void StartActuate(void *argument)
   }
 
   osDelay(250);
-  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
+  htim4->Instance->CCR4 = pitch_pul_duty_cycle; //Set PWM duty cycle
 
   /* Infinite loop */
   for(;;)
@@ -1370,6 +1394,44 @@ void StartRollTask(void *argument)
     osDelay(1);
   }
   /* USER CODE END StartRollTask */
+}
+
+/* USER CODE BEGIN Header_StartPumpActuateTask */
+/**
+* @brief Function implementing the pumpActuateTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartPumpActuateTask */
+void StartPumpActuateTask(void *argument)
+{
+  /* USER CODE BEGIN StartPumpActuateTask */
+  /* Infinite loop */
+
+  HAL_GPIO_WritePin(Pump_Dir_GPIO_Port, Pump_Dir_Pin, GPIO_PIN_RESET); // Direction (Low for forward convention, high for reverse)
+  htim4->Instance->CCR3 = pump_pul_duty_cycle;
+  HAL_GPIO_WritePin(Pump_En_GPIO_Port, Pump_En_Pin, GPIO_PIN_SET); // Enable (High for enable, low for off)
+
+  for(;;)
+  {
+    HAL_Delay(3000);
+
+    htim4->Instance->CCR3 = 0; //PWM off
+    HAL_Delay(100);
+    HAL_GPIO_WritePin(Pump_Dir_GPIO_Port, Pump_Dir_Pin, GPIO_PIN_SET); // Direction (Low for forward convention, high for reverse)
+    HAL_Delay(100);
+    htim4->Instance->CCR3 = pump_pul_duty_cycle; //PWM on
+
+	HAL_Delay(3000);
+
+	htim4->Instance->CCR3 = 0;
+    HAL_Delay(100);
+    HAL_GPIO_WritePin(Pump_Dir_GPIO_Port, Pump_Dir_Pin, GPIO_PIN_RESET);
+    HAL_Delay(100);
+    htim4->Instance->CCR3 = pump_pul_duty_cycle;
+
+  }
+  /* USER CODE END StartPumpActuateTask */
 }
 
 /**
