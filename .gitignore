@@ -37,3 +37,6 @@
 [Rr]elease
 [Dd]ebug
 .launch
+
+# micro-ROS generated library (must be built locally with Docker)
+micro_ros_stm32cubemx_utils/microros_static_library_ide/libmicroros/

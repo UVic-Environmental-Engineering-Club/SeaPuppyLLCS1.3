@@ -20,23 +20,70 @@ CUBE IDE development environment was used on Windows 10. MicroROS for ROS2 Humbl
 5. Enjoy!
 
 ## Getting Started (If you are not UVEEC member)
-1. Install **V1.18.0** [STM32 CUBE IDE](https://www.st.com/en/development-tools/stm32cubeide.html) on Windows 10. Remember your workspace.
-2. Git clone this repository in the workspace you have defined.
-3. Open CubeIDE. File -> Import -> General -> Existing Projects into Workspace -> Select the clone of this project. You do not have to change anything on ioc.
-4. Connect your STM32 with ST-Link.
-5. Connect your ST-Link to your Windows machine.
-6. For **Windows Users** Open a terminal in the project folder and run (make sure to sign in to docker desktop first):
+
+### Prerequisites
+- Install **V1.18.0** [STM32 CUBE IDE](https://www.st.com/en/development-tools/stm32cubeide.html) on Windows 10/11
+- Install [Docker Desktop](https://www.docker.com/products/docker-desktop) and make sure it's running
+- Git
+
+### Setup Steps
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/UVic-Environmental-Engineering-Club/CETOLLCS1.3.git
+   cd CETOLLCS1.3
    ```
+
+2. **Build the micro-ROS library with custom interfaces**:
+   
+   > **IMPORTANT**: This step is **REQUIRED** before building the project. The custom ROS2 message interfaces are NOT included in the repository and must be compiled locally.
+   
+   Open a terminal (PowerShell or Command Prompt) in the project folder and run:
+   ```bash
    docker pull microros/micro_ros_static_library_builder:humble
    docker run --rm -v <ABSOLUTE_PATH_TO_PROJECT>:/project --env MICROROS_LIBRARY_FOLDER=micro_ros_stm32cubemx_utils/microros_static_library_ide microros/micro_ros_static_library_builder:humble
    ```
-   This will include **libmicroros** which is crucial to setup MicroROS in your system.
-   Follow this guide under **Windows 11 (Community Contributed)**:  [micro_ros_stm32cubemx_utils](https://github.com/micro-ROS/micro_ros_stm32cubemx_utils)
-8. Build. (CubeIDE might prompt to install ST-Link-Server. Follow the pop-up's instruction)
-9. Run.
-10. You can not unplug your STM32. (If there was any issue before this process, please use [git issues](https://github.com/UVic-Environmental-Engineering-Club/SeaPuppy1.3/issues) to report)
-11. Plug in your STM32 to Raspberry Pi with NAvigator Flight Controller.
-12. You are done with this part. Follow instruction on Raspberry Pi documentation. (To be developed and documented)
+   
+   Replace `<ABSOLUTE_PATH_TO_PROJECT>` with your full project path. For example:
+   - Windows: `C:\Users\YourName\CETOLLCS1.3`
+   - The command would be: `docker run --rm -v C:\Users\YourName\CETOLLCS1.3:/project --env MICROROS_LIBRARY_FOLDER=micro_ros_stm32cubemx_utils/microros_static_library_ide microros/micro_ros_static_library_builder:humble`
+   
+   This will generate the `libmicroros` library including the UVEEC custom interfaces (`uveec_custom_interfaces`).
+
+3. **Import the project into STM32CubeIDE**:
+   - Open STM32CubeIDE
+   - File → Import → General → Existing Projects into Workspace
+   - Select the cloned project directory
+   - Click Finish
+
+4. **Build the project**:
+   - Click the Build button (hammer icon) in STM32CubeIDE
+   - The project should now compile successfully
+
+5. **Connect and Flash**:
+   - Connect your STM32 with ST-Link
+   - Connect your ST-Link to your Windows machine
+   - Click Run to flash the firmware
+   - (CubeIDE might prompt to install ST-Link-Server - follow the instructions)
+
+6. **Deploy**:
+   - You can now unplug your STM32
+   - Plug in your STM32 to Raspberry Pi with Navigator Flight Controller
+   - Follow instruction on Raspberry Pi documentation (To be developed and documented)
+
+### Troubleshooting
+
+**Build Error: "uveec_custom_interfaces/msg/raspberry_sensors_interface.h: No such file or directory"**
+- You forgot to run the Docker command in step 2
+- Or the Docker build failed - delete `micro_ros_stm32cubemx_utils/microros_static_library_ide/libmicroros/` and re-run the Docker command
+
+**Linker Error: "cannot find -lmicroros"**
+- The Docker build didn't complete successfully
+- Make sure Docker Desktop is running
+- Delete `micro_ros_stm32cubemx_utils/microros_static_library_ide/libmicroros/` and re-run the Docker command
+
+**Docker says "micro-ROS library found. Skipping..."**
+- An old/incomplete library exists
+- Delete `micro_ros_stm32cubemx_utils/microros_static_library_ide/libmicroros/` to force a rebuild
 
 ## Relevent documentations
 * [micro_ros_stm32cubemx_utils](https://github.com/micro-ROS/micro_ros_stm32cubemx_utils)

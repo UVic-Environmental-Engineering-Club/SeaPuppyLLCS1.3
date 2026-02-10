@@ -258,7 +258,6 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 float get_angle_deg(void) {
     // coarse sector:
     uint32_t sector = (pulse_count % 9);
-    float base = sector * 40.0f;
     // fraction interpolation:
     uint32_t now = HAL_GetTick();
     uint32_t elapsed = (now >= last_ts) ? (now - last_ts) : (0xFFFFFFFF - last_ts + now);
@@ -1248,9 +1247,9 @@ void StartDefaultTask(void *argument)
     while (blinkCounter > 0)
       {
         HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
-        HAL_Delay(200);
+        osDelay(200);
         HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-        HAL_Delay(200);
+        osDelay(200);
         blinkCounter -= 1;
       }
   }

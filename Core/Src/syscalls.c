@@ -29,7 +29,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <sys/times.h>
-
+#include "main.h"
 
 /* Variables */
 extern int __io_putchar(int ch) __attribute__((weak));
@@ -41,6 +41,21 @@ char **environ = __env;
 
 
 /* Functions */
+int _gettimeofday(struct timeval *tv, void *tzvp)
+{
+  (void)tzvp;
+
+  if (tv == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  uint32_t ms = HAL_GetTick();
+  tv->tv_sec  = (time_t)(ms / 1000U);
+  tv->tv_usec = (suseconds_t)((ms % 1000U) * 1000U);
+  return 0;
+}
+
 void initialise_monitor_handles()
 {
 }
