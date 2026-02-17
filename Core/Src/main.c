@@ -373,8 +373,8 @@ int main(void)
   HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_3);
   HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
 
-  htim4->Instance->CCR4 = 0; //Start with pitch pul stopped
-  htim4->Instance->CCR3 = 0; //Start with pump pul stopped
+  (&htim4)->Instance->CCR4 = 0; //Start with pitch pul stopped
+  (&htim4)->Instance->CCR3 = 0; //Start with pump pul stopped
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
 
   /* USER CODE END 2 */
@@ -1307,7 +1307,7 @@ void StartActuate(void *argument)
   }
 
   osDelay(250);
-  htim4->Instance->CCR4 = pitch_pul_duty_cycle; //Set PWM duty cycle
+  (&htim4)->Instance->CCR4 = pitch_pul_duty_cycle; //Set PWM duty cycle
 
   /* Infinite loop */
   for(;;)
@@ -1409,26 +1409,26 @@ void StartPumpActuateTask(void *argument)
   /* Infinite loop */
 
   HAL_GPIO_WritePin(Pump_Dir_GPIO_Port, Pump_Dir_Pin, GPIO_PIN_RESET); // Direction (Low for forward convention, high for reverse)
-  htim4->Instance->CCR3 = pump_pul_duty_cycle;
+  (&htim4)->Instance->CCR3 = pump_pul_duty_cycle;
   HAL_GPIO_WritePin(Pump_En_GPIO_Port, Pump_En_Pin, GPIO_PIN_SET); // Enable (High for enable, low for off)
 
   for(;;)
   {
     HAL_Delay(3000);
 
-    htim4->Instance->CCR3 = 0; //PWM off
+    (&htim4)->Instance->CCR3 = 0; //PWM off
     HAL_Delay(100);
     HAL_GPIO_WritePin(Pump_Dir_GPIO_Port, Pump_Dir_Pin, GPIO_PIN_SET); // Direction (Low for forward convention, high for reverse)
     HAL_Delay(100);
-    htim4->Instance->CCR3 = pump_pul_duty_cycle; //PWM on
+    (&htim4)->Instance->CCR3 = pump_pul_duty_cycle; //PWM on
 
 	HAL_Delay(3000);
 
-	htim4->Instance->CCR3 = 0;
+	(&htim4)->Instance->CCR3 = 0;
     HAL_Delay(100);
     HAL_GPIO_WritePin(Pump_Dir_GPIO_Port, Pump_Dir_Pin, GPIO_PIN_RESET);
     HAL_Delay(100);
-    htim4->Instance->CCR3 = pump_pul_duty_cycle;
+    (&htim4)->Instance->CCR3 = pump_pul_duty_cycle;
 
   }
   /* USER CODE END StartPumpActuateTask */
