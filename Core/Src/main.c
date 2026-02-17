@@ -167,6 +167,10 @@ volatile float rpm = 0;
 
 uint16_t distance;
 int pitch_direction = 0;
+
+//CAN RX Data
+CAN_RxHeaderTypeDef   RxHeader;
+uint8_t               RxData[8];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -199,6 +203,20 @@ void error_loop(){}
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+//CAN RX Callback
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+  if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if ((RxHeader.StdId == 0x103))
+  {
+	  //datacheck = 1;
+  }
+}
+
 // subscription_callback. Triggered by subscriber executor
 void subscription_callback(const void * msgin)
 {
@@ -355,6 +373,13 @@ int main(void)
   htim2.Instance->CCR3 = 4095;
   HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_3);
   HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
+
+  //Enable CAN RX Interrupt
+  if (HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK)
+  {
+	  Error_Handler();
+  }
+
   /* USER CODE END 2 */
 
   /* Init scheduler */
