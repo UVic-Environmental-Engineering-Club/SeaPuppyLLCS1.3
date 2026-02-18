@@ -1,7 +1,5 @@
-#include <uxr/client/transport.h>
-
 #include <rmw_microxrcedds_c/config.h>
-
+#include <rmw_microxrcedds_c/config.h>
 #include "main.h"
 #include "cmsis_os.h"
 
@@ -9,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <uxr/client/transport.h>
 
 #ifdef RMW_UXRCE_TRANSPORT_CUSTOM
 
