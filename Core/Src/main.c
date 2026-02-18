@@ -164,6 +164,8 @@ volatile float rpm = 0;
 uint16_t distance;
 int pitch_direction = 0;
 
+uint32_t encoderValue = 0;
+
 //CAN RX Data
 CAN_RxHeaderTypeDef   RxHeader;
 uint8_t               RxData[8];
@@ -207,6 +209,11 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
   {
     Error_Handler();
   }
+
+  if(RxData[2] == 0x01){
+	  encoderValue = RxData[5] + (RxData[4] >> 8) + (RxData[4] >> 16);
+  }
+
 }
 
 // subscription_callback. Triggered by subscriber executor
