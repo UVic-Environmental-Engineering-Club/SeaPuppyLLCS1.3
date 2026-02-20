@@ -1369,7 +1369,7 @@ void StartDistTask(void *argument)
 * @retval None
 */
 /* USER CODE END Header_StartRollTask */
-void d, (void *argument)
+void StartRollTask(void *argument)
 {
   /* USER CODE BEGIN StartRollTask */
 	HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1);
