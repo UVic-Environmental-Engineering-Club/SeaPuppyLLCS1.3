@@ -127,9 +127,7 @@ void Error_Handler(void);
 #define Roll_Hall_GPIO_Port GPIOB
 #define TOF_SCL_Pin GPIO_PIN_6
 #define TOF_SCL_GPIO_Port GPIOB
-#define LD2_Pin GPIO_PIN_7
-#define LD2_GPIO_Port GPIOB
-#define TOF_SDA_Pin GPIO_PIN_9
+#define TOF_SDA_Pin GPIO_PIN_7
 #define TOF_SDA_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
