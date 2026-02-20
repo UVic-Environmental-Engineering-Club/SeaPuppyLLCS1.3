@@ -59,8 +59,8 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define Pump_En_Pin GPIO_PIN_13
-#define Pump_En_GPIO_Port GPIOC
+#define Pump_Dir_Pin GPIO_PIN_13
+#define Pump_Dir_GPIO_Port GPIOC
 #define Pitch_En_3V3_Pin GPIO_PIN_0
 #define Pitch_En_3V3_GPIO_Port GPIOF
 #define Pitch_Dir_3V3_Pin GPIO_PIN_1
@@ -119,8 +119,8 @@ void Error_Handler(void);
 #define TMS_GPIO_Port GPIOA
 #define TCK_Pin GPIO_PIN_14
 #define TCK_GPIO_Port GPIOA
-#define Pump_Dir_Pin GPIO_PIN_12
-#define Pump_Dir_GPIO_Port GPIOC
+#define Pump_En_Pin GPIO_PIN_12
+#define Pump_En_GPIO_Port GPIOC
 #define CAN_Set_Zero_Pin GPIO_PIN_2
 #define CAN_Set_Zero_GPIO_Port GPIOD
 #define Roll_Hall_Pin GPIO_PIN_3

@@ -1120,8 +1120,8 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOG_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, Pump_En_Pin|Brake_En_Pin|Enable_24V_Pin|Enable_11V_Pin
-                          |Pump_Dir_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, Pump_Dir_Pin|Brake_En_Pin|Enable_24V_Pin|Enable_11V_Pin
+                          |Pump_En_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOF, Pitch_En_3V3_Pin|Pitch_Dir_3V3_Pin|Roll_DIR_Pin|En_24V_ADC_Pin, GPIO_PIN_RESET);
@@ -1135,10 +1135,10 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(CAN_Set_Zero_GPIO_Port, CAN_Set_Zero_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : Pump_En_Pin Brake_En_Pin Enable_24V_Pin Enable_11V_Pin
-                           Pump_Dir_Pin */
-  GPIO_InitStruct.Pin = Pump_En_Pin|Brake_En_Pin|Enable_24V_Pin|Enable_11V_Pin
-                          |Pump_Dir_Pin;
+  /*Configure GPIO pins : Pump_Dir_Pin Brake_En_Pin Enable_24V_Pin Enable_11V_Pin
+                           Pump_En_Pin */
+  GPIO_InitStruct.Pin = Pump_Dir_Pin|Brake_En_Pin|Enable_24V_Pin|Enable_11V_Pin
+                          |Pump_En_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
