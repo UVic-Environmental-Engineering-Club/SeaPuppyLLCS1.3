@@ -17,28 +17,24 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
+#include <rcl/error_handling.h>
+#include <rcl/rcl.h>
+#include <rclc/executor.h>
+#include <rclc/rclc.h>
+#include <rmw_microros/rmw_microros.h>
+#include <rmw_microxrcedds_c/config.h>
+#include <std_msgs/msg/int32.h>
+#include <std_msgs/msg/string.h>
+#include <std_msgs/msg/u_int16.h>
+#include <uveec_custom_interfaces/msg/raspberry_sensors_interface.h>
+#include <uveec_custom_interfaces/msg/stm_sensors_interface.h>
+#include <uxr/client/transport.h>
 #include "main.h"
 #include "cmsis_os.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 // Micro-ROS definitions
-#include <rcl/rcl.h>
-#include <rcl/error_handling.h>
-#include <rclc/rclc.h>
-#include <rclc/executor.h>
-#include <uxr/client/transport.h>
-#include <rmw_microxrcedds_c/config.h>
-#include <rmw_microros/rmw_microros.h>
-
-// std_msgs for Micro-ROS
-#include <std_msgs/msg/int32.h>
-#include <std_msgs/msg/u_int16.h>
-#include <std_msgs/msg/string.h>
-
-// UVEEC Custom Interface
-#include <uveec_custom_interfaces/msg/raspberry_sensors_interface.h>
-#include <uveec_custom_interfaces/msg/stm_sensors_interface.h>
 
 // RCL return Check
 #define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){error_loop();}}
@@ -168,6 +164,8 @@ volatile float rpm = 0;
 uint16_t distance;
 int pitch_direction = 0;
 
+uint32_t encoderValue = 0;
+
 //CAN RX Data
 CAN_RxHeaderTypeDef   RxHeader;
 uint8_t               RxData[8];
@@ -211,10 +209,11 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
   {
     Error_Handler();
   }
-  if ((RxHeader.StdId == 0x103))
-  {
-	  //datacheck = 1;
+
+  if(RxData[2] == 0x01){
+	  encoderValue = RxData[5] + (RxData[4] >> 8) + (RxData[4] >> 16);
   }
+
 }
 
 // subscription_callback. Triggered by subscriber executor
@@ -384,6 +383,40 @@ int main(void)
   if (HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK)
   {
 	  Error_Handler();
+  }
+
+  //Configure Draw Wire Sensor
+  /*
+   * Set the encoder mode:
+	0x00:query mode，(default)
+	0x01:Automatically return encoder angular velocity value,
+	0xAA:Automatically return encoder value,
+	Effective immediately after successful setting
+
+	example:
+	Issue:[0x04][0x01][0x04][0xAA]
+	Return:[0x04][0x01][0x04][0x00]
+	Setting mode:0xAA(automatic return mode)
+
+   */
+
+  CAN_TxHeaderTypeDef   TxHeader;
+  uint8_t               TxData[8];
+  uint32_t              TxMailbox;
+
+  TxHeader.IDE = CAN_ID_STD;
+  TxHeader.StdId = 0x1;
+  TxHeader.RTR = CAN_RTR_DATA;
+  TxHeader.DLC = 4;
+
+  TxData[0] = 0x04; //Data length
+  TxData[1] = 0x01; //Encoder address(default 0x01)
+  TxData[2] = 0x04; //Instruction code(0x04 = Set the encoder mode
+  TxData[3] = 0xAA; //Automatic return mode
+
+  if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox) != HAL_OK)
+  {
+     Error_Handler ();
   }
 
   /* USER CODE END 2 */
