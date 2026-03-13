@@ -85,8 +85,6 @@ void Error_Handler(void);
 #define Brake_En_GPIO_Port GPIOC
 #define Enable_24V_Pin GPIO_PIN_5
 #define Enable_24V_GPIO_Port GPIOC
-#define LD1_Pin GPIO_PIN_0
-#define LD1_GPIO_Port GPIOB
 #define ADC_11V_Pin GPIO_PIN_1
 #define ADC_11V_GPIO_Port GPIOB
 #define Roll_PWM_Pin GPIO_PIN_10

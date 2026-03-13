@@ -17,6 +17,12 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
+#include "main.h"
+#include "cmsis_os.h"
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+
 #include <rcl/error_handling.h>
 #include <rcl/rcl.h>
 #include <rclc/executor.h>
@@ -29,11 +35,7 @@
 #include <uveec_custom_interfaces/msg/raspberry_sensors_interface.h>
 #include <uveec_custom_interfaces/msg/stm_sensors_interface.h>
 #include <uxr/client/transport.h>
-#include "main.h"
-#include "cmsis_os.h"
 
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
 // Micro-ROS definitions
 
 // RCL return Check
@@ -164,6 +166,8 @@ volatile float rpm = 0;
 uint16_t distance;
 int pitch_direction = 0;
 
+int can_error = -1;
+
 uint32_t encoderValue = 0;
 
 //CAN RX Data
@@ -179,7 +183,6 @@ static void MX_USART3_UART_Init(void);
 static void MX_USB_OTG_FS_PCD_Init(void);
 static void MX_TIM4_Init(void);
 static void MX_ADC1_Init(void);
-static void MX_CAN1_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_TIM2_Init(void);
@@ -188,6 +191,7 @@ static void MX_TIM10_Init(void);
 static void MX_TIM11_Init(void);
 static void MX_TIM13_Init(void);
 static void MX_TIM14_Init(void);
+static void MX_CAN1_Init(void);
 void StartDefaultTask(void *argument);
 void StartActuate(void *argument);
 void StartDistTask(void *argument);
@@ -288,7 +292,7 @@ int change_pitch_direction(int dir) {
 		HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_4);
 		HAL_Delay(100);
 		HAL_GPIO_WritePin(Pitch_Dir_3V3_GPIO_Port, Pitch_Dir_3V3_Pin, GPIO_PIN_SET);
-		HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
+		//HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
 		HAL_Delay(100);
 		HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
 		pitch_direction = 1;
@@ -297,7 +301,7 @@ int change_pitch_direction(int dir) {
 		HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_4);
 		HAL_Delay(100);
 		HAL_GPIO_WritePin(Pitch_Dir_3V3_GPIO_Port, Pitch_Dir_3V3_Pin, GPIO_PIN_RESET);
-		HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
+		//HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
 		HAL_Delay(100);
 		HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
 		pitch_direction = 0;
@@ -343,7 +347,6 @@ int main(void)
   MX_USB_OTG_FS_PCD_Init();
   MX_TIM4_Init();
   MX_ADC1_Init();
-  MX_CAN1_Init();
   MX_USART2_UART_Init();
   MX_I2C1_Init();
   MX_TIM2_Init();
@@ -352,6 +355,7 @@ int main(void)
   MX_TIM11_Init();
   MX_TIM13_Init();
   MX_TIM14_Init();
+  MX_CAN1_Init();
   /* USER CODE BEGIN 2 */
 
   HAL_TIM_PWM_Start(&htim11, TIM_CHANNEL_1);
@@ -379,11 +383,7 @@ int main(void)
   HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_3);
   HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
 
-  //Enable CAN RX Interrupt
-  if (HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK)
-  {
-	  Error_Handler();
-  }
+
 
   //Configure Draw Wire Sensor
   /*
@@ -399,25 +399,6 @@ int main(void)
 	Setting mode:0xAA(automatic return mode)
 
    */
-
-  CAN_TxHeaderTypeDef   TxHeader;
-  uint8_t               TxData[8];
-  uint32_t              TxMailbox;
-
-  TxHeader.IDE = CAN_ID_STD;
-  TxHeader.StdId = 0x1;
-  TxHeader.RTR = CAN_RTR_DATA;
-  TxHeader.DLC = 4;
-
-  TxData[0] = 0x04; //Data length
-  TxData[1] = 0x01; //Encoder address(default 0x01)
-  TxData[2] = 0x04; //Instruction code(0x04 = Set the encoder mode
-  TxData[3] = 0xAA; //Automatic return mode
-
-  if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox) != HAL_OK)
-  {
-     Error_Handler ();
-  }
 
   /* USER CODE END 2 */
 
@@ -644,8 +625,8 @@ static void MX_CAN1_Init(void)
 
   /* USER CODE END CAN1_Init 1 */
   hcan1.Instance = CAN1;
-  hcan1.Init.Prescaler = 28;
-  hcan1.Init.Mode = CAN_MODE_NORMAL;
+  hcan1.Init.Prescaler = 16;
+  hcan1.Init.Mode = CAN_MODE_LOOPBACK;
   hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
   hcan1.Init.TimeSeg1 = CAN_BS1_1TQ;
   hcan1.Init.TimeSeg2 = CAN_BS2_1TQ;
@@ -660,7 +641,21 @@ static void MX_CAN1_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN CAN1_Init 2 */
+  //Enable CAN RX Interrupt
+  if (HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK)
+  {
+	  Error_Handler();
+  }
 
+  HAL_GPIO_WritePin(En_24V_ADC_GPIO_Port, Enable_24V_Pin, GPIO_PIN_RESET);
+
+  HAL_Delay(500);
+
+  if (HAL_CAN_Start(&hcan1) != HAL_OK)
+	{
+	  can_error = HAL_CAN_GetError(&hcan1);
+	  Error_Handler();
+	}
   /* USER CODE END CAN1_Init 2 */
 
 }
@@ -1166,7 +1161,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOC, Brake_En_Pin|Enable_24V_Pin|Enable_11V_Pin|Pump_Dir_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, LD1_Pin|LD3_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(USB_PowerSwitchOn_GPIO_Port, USB_PowerSwitchOn_Pin, GPIO_PIN_RESET);
@@ -1194,12 +1189,18 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LD1_Pin LD3_Pin */
-  GPIO_InitStruct.Pin = LD1_Pin|LD3_Pin;
+  /*Configure GPIO pin : PB0 */
+  GPIO_InitStruct.Pin = GPIO_PIN_0;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : LD3_Pin */
+  GPIO_InitStruct.Pin = LD3_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  HAL_GPIO_Init(LD3_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : USB_PowerSwitchOn_Pin */
   GPIO_InitStruct.Pin = USB_PowerSwitchOn_Pin;
@@ -1340,14 +1341,14 @@ void StartActuate(void *argument)
 		pitch_direction = 1;
 		HAL_Delay(100);
 		HAL_GPIO_WritePin(Pitch_Dir_3V3_GPIO_Port, Pitch_Dir_3V3_Pin, GPIO_PIN_SET);
-		HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
+		//HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
 		HAL_Delay(100);
   }
   else {
 		pitch_direction = 0;
 		HAL_Delay(100);
 		HAL_GPIO_WritePin(Pitch_Dir_3V3_GPIO_Port, Pitch_Dir_3V3_Pin, GPIO_PIN_RESET);
-		HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
+		//HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
 		HAL_Delay(100);
   }
 
@@ -1432,10 +1433,31 @@ void StartRollTask(void *argument)
 {
   /* USER CODE BEGIN StartRollTask */
 	HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1);
+	CAN_TxHeaderTypeDef   TxHeader;
+  uint8_t               TxData[8];
+  uint32_t              TxMailbox;
+
+  TxHeader.IDE = CAN_ID_STD;
+  TxHeader.StdId = 0x1;
+  TxHeader.RTR = CAN_RTR_DATA;
+  TxHeader.DLC = 4;
+
+  TxData[0] = 0x04; //Data length
+  TxData[1] = 0x01; //Encoder address(default 0x01)
+  TxData[2] = 0x04; //Instruction code(0x04 = Set the encoder mode
+  TxData[3] = 0xAA; //Automatic return mode
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+	  if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox) != HAL_OK)
+	  {
+	     Error_Handler ();
+	  }
+
+	  TIM11->CCR1 = 10000;
+    osDelay(500);
+    TIM11->CCR1 = 0;
+    osDelay(500);
   }
   /* USER CODE END StartRollTask */
 }
