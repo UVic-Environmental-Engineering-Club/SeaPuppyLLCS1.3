@@ -333,7 +333,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-	blinkCounter = 30;
+	blinkCounter = 10;
 
   /* USER CODE END 1 */
 
@@ -372,46 +372,17 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   HAL_TIM_PWM_Start(&htim11, TIM_CHANNEL_1);
-  TIM11->CCR1 = 10000;
 
-  /*
-  HAL_GPIO_WritePin(Green_OB_LED1_GPIO_Port, Green_OB_LED1_Pin, GPIO_PIN_SET);
-
+  //Quick startup blink sequence
   while (blinkCounter > 0)
   {
-	HAL_GPIO_WritePin(Green_OB_LED1_GPIO_Port, Green_OB_LED1_Pin, GPIO_PIN_SET);
+	TIM11->CCR1 = 10000;
 	HAL_Delay(100);
-	HAL_GPIO_WritePin(Green_OB_LED1_GPIO_Port, Green_OB_LED1_Pin, GPIO_PIN_RESET);
+	TIM11->CCR1 = 0;
 	HAL_Delay(100);
 	blinkCounter -= 1;
   }
-
-  */
-
-  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_3);
-  while(HAL_GPIO_ReadPin(Roll_Hall_GPIO_Port, Roll_Hall_Pin) == GPIO_PIN_SET) {
-
-  }
-  htim2.Instance->CCR3 = 4095;
-  HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_3);
-  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
-
-
-
-  //Configure Draw Wire Sensor
-  /*
-   * Set the encoder mode:
-	0x00:query mode，(default)
-	0x01:Automatically return encoder angular velocity value,
-	0xAA:Automatically return encoder value,
-	Effective immediately after successful setting
-
-	example:
-	Issue:[0x04][0x01][0x04][0xAA]
-	Return:[0x04][0x01][0x04][0x00]
-	Setting mode:0xAA(automatic return mode)
-
-   */
+  TIM11->CCR1 = 10000;
 
   /* USER CODE END 2 */
 
@@ -1373,7 +1344,34 @@ void start_task_sensors(void *argument)
   //50Hz polling frequency = run task every 1/50Hz = 20ms = 20 ticks
   const TickType_t xFrequency = 20;
 
-  // Initialise the VL53L0X
+  //Hal Sensor Setup??
+  /*
+  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_3);
+  while(HAL_GPIO_ReadPin(Roll_Hall_GPIO_Port, Roll_Hall_Pin) == GPIO_PIN_SET) {
+
+  }
+  htim2.Instance->CCR3 = 4095;
+  HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_3);
+  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
+	*/
+
+
+  //Configure Draw Wire Sensor
+  /*
+   * Set the encoder mode:
+	0x00:query mode，(default)
+	0x01:Automatically return encoder angular velocity value,
+	0xAA:Automatically return encoder value,
+	Effective immediately after successful setting
+
+	example:
+	Issue:[0x04][0x01][0x04][0xAA]
+	Return:[0x04][0x01][0x04][0x00]
+	Setting mode:0xAA(automatic return mode)
+
+   */
+
+  // Initialise the VL53L0X TOF Sensor
   statInfo_t_VL53L0X distanceStr;
 
   hi2c1.Instance = I2C1;
@@ -1427,6 +1425,7 @@ void start_task_actuators(void *argument)
   //50Hz polling frequency = run task every 1/100Hz = 10ms = 10 ticks
   const TickType_t xFrequency = 10;
 
+  //Pitch Motor Actuation Setup
   HAL_GPIO_WritePin(Pitch_En_3V3_GPIO_Port, Pitch_En_3V3_Pin, GPIO_PIN_SET);
 
   if (distance < min_tof_distance) {
