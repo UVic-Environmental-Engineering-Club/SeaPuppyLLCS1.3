@@ -97,41 +97,53 @@ const osThreadAttr_t defaultTask_attributes = {
   .stack_size = sizeof(defaultTaskBuffer),
   .priority = (osPriority_t) osPriorityNormal,
 };
-/* Definitions for Actuate */
-osThreadId_t ActuateHandle;
-uint32_t ActuateBuffer[ 128 ];
-osStaticThreadDef_t ActuateControlBlock;
-const osThreadAttr_t Actuate_attributes = {
-  .name = "Actuate",
-  .cb_mem = &ActuateControlBlock,
-  .cb_size = sizeof(ActuateControlBlock),
-  .stack_mem = &ActuateBuffer[0],
-  .stack_size = sizeof(ActuateBuffer),
-  .priority = (osPriority_t) osPriorityNormal,
+/* Definitions for task_ros_spin */
+osThreadId_t task_ros_spinHandle;
+uint32_t task_ros_spinBuffer[ 3000 ];
+osStaticThreadDef_t task_ros_spinControlBlock;
+const osThreadAttr_t task_ros_spin_attributes = {
+  .name = "task_ros_spin",
+  .cb_mem = &task_ros_spinControlBlock,
+  .cb_size = sizeof(task_ros_spinControlBlock),
+  .stack_mem = &task_ros_spinBuffer[0],
+  .stack_size = sizeof(task_ros_spinBuffer),
+  .priority = (osPriority_t) osPriorityHigh,
 };
-/* Definitions for tofDistTask */
-osThreadId_t tofDistTaskHandle;
-uint32_t tosDistTaskBuffer[ 128 ];
-osStaticThreadDef_t tosDistTaskControlBlock;
-const osThreadAttr_t tofDistTask_attributes = {
-  .name = "tofDistTask",
-  .cb_mem = &tosDistTaskControlBlock,
-  .cb_size = sizeof(tosDistTaskControlBlock),
-  .stack_mem = &tosDistTaskBuffer[0],
-  .stack_size = sizeof(tosDistTaskBuffer),
-  .priority = (osPriority_t) osPriorityNormal,
+/* Definitions for task_sensors */
+osThreadId_t task_sensorsHandle;
+uint32_t task_sensorsBuffer[ 128 ];
+osStaticThreadDef_t task_sensorsControlBlock;
+const osThreadAttr_t task_sensors_attributes = {
+  .name = "task_sensors",
+  .cb_mem = &task_sensorsControlBlock,
+  .cb_size = sizeof(task_sensorsControlBlock),
+  .stack_mem = &task_sensorsBuffer[0],
+  .stack_size = sizeof(task_sensorsBuffer),
+  .priority = (osPriority_t) osPriorityLow,
 };
-/* Definitions for rollEncoderTask */
-osThreadId_t rollEncoderTaskHandle;
-uint32_t rollEncoderTaskBuffer[ 128 ];
-osStaticThreadDef_t rollEncoderTaskControlBlock;
-const osThreadAttr_t rollEncoderTask_attributes = {
-  .name = "rollEncoderTask",
-  .cb_mem = &rollEncoderTaskControlBlock,
-  .cb_size = sizeof(rollEncoderTaskControlBlock),
-  .stack_mem = &rollEncoderTaskBuffer[0],
-  .stack_size = sizeof(rollEncoderTaskBuffer),
-  .priority = (osPriority_t) osPriorityNormal,
+/* Definitions for task_actuators */
+osThreadId_t task_actuatorsHandle;
+uint32_t task_actuatorsBuffer[ 128 ];
+osStaticThreadDef_t task_actuatorsControlBlock;
+const osThreadAttr_t task_actuators_attributes = {
+  .name = "task_actuators",
+  .cb_mem = &task_actuatorsControlBlock,
+  .cb_size = sizeof(task_actuatorsControlBlock),
+  .stack_mem = &task_actuatorsBuffer[0],
+  .stack_size = sizeof(task_actuatorsBuffer),
+  .priority = (osPriority_t) osPriorityLow,
+};
+/* Definitions for task_watchdog */
+osThreadId_t task_watchdogHandle;
+uint32_t task_watchdogBuffer[ 128 ];
+osStaticThreadDef_t task_watchdogControlBlock;
+const osThreadAttr_t task_watchdog_attributes = {
+  .name = "task_watchdog",
+  .cb_mem = &task_watchdogControlBlock,
+  .cb_size = sizeof(task_watchdogControlBlock),
+  .stack_mem = &task_watchdogBuffer[0],
+  .stack_size = sizeof(task_watchdogBuffer),
+  .priority = (osPriority_t) osPriorityLow,
 };
 /* USER CODE BEGIN PV */
 rcl_node_t node;
@@ -193,9 +205,10 @@ static void MX_TIM13_Init(void);
 static void MX_TIM14_Init(void);
 static void MX_CAN1_Init(void);
 void StartDefaultTask(void *argument);
-void StartActuate(void *argument);
-void StartDistTask(void *argument);
-void StartRollTask(void *argument);
+void start_task_ros_spin(void *argument);
+void start_task_sensors(void *argument);
+void start_task_actuators(void *argument);
+void start_task_watchdog(void *argument);
 
 /* USER CODE BEGIN PFP */
 void subscription_callback(const void *msgin);
@@ -425,14 +438,17 @@ int main(void)
   /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
-  /* creation of Actuate */
-  ActuateHandle = osThreadNew(StartActuate, NULL, &Actuate_attributes);
+  /* creation of task_ros_spin */
+  task_ros_spinHandle = osThreadNew(start_task_ros_spin, NULL, &task_ros_spin_attributes);
 
-  /* creation of tofDistTask */
-  tofDistTaskHandle = osThreadNew(StartDistTask, NULL, &tofDistTask_attributes);
+  /* creation of task_sensors */
+  task_sensorsHandle = osThreadNew(start_task_sensors, NULL, &task_sensors_attributes);
 
-  /* creation of rollEncoderTask */
-  rollEncoderTaskHandle = osThreadNew(StartRollTask, NULL, &rollEncoderTask_attributes);
+  /* creation of task_actuators */
+  task_actuatorsHandle = osThreadNew(start_task_actuators, NULL, &task_actuators_attributes);
+
+  /* creation of task_watchdog */
+  task_watchdogHandle = osThreadNew(start_task_watchdog, NULL, &task_watchdog_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -1251,15 +1267,33 @@ void * microros_zero_allocate(size_t number_of_elements, size_t size_of_element,
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
+  /* Infinite loop */
+  for(;;)
+  {
+	osDelay(1);
+  }
+  /* USER CODE END 5 */
+}
 
-  // micro-ROS configuration
+/* USER CODE BEGIN Header_start_task_ros_spin */
+/**
+* @brief Function implementing the task_ros_spin thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_start_task_ros_spin */
+void start_task_ros_spin(void *argument)
+{
+  /* USER CODE BEGIN start_task_ros_spin */
+
+	  // micro-ROS configuration
   rmw_uros_set_custom_transport(
-    true,
-    (void *) &huart3,
-    cubemx_transport_open,
-    cubemx_transport_close,
-    cubemx_transport_write,
-    cubemx_transport_read);
+	true,
+	(void *) &huart3,
+	cubemx_transport_open,
+	cubemx_transport_close,
+	cubemx_transport_write,
+	cubemx_transport_read);
 
   allocator = rcl_get_default_allocator();
 
@@ -1273,18 +1307,18 @@ void StartDefaultTask(void *argument)
 
   // create publisher
   RCCHECK(rclc_publisher_init_default(
-    &publisher,
-    &node,
-    ROSIDL_GET_MSG_TYPE_SUPPORT(uveec_custom_interfaces, msg, StmSensorsInterface),
-    "stm_sensors_topic"));
+	&publisher,
+	&node,
+	ROSIDL_GET_MSG_TYPE_SUPPORT(uveec_custom_interfaces, msg, StmSensorsInterface),
+	"stm_sensors_topic"));
 
 
   // create subscriber
   RCCHECK(rclc_subscription_init_default(
-    &subscriber,
-    &node,
-    ROSIDL_GET_MSG_TYPE_SUPPORT(uveec_custom_interfaces, msg, RaspberrySensorsInterface),
-    "raspberry_sensors_topic"));
+	&subscriber,
+	&node,
+	ROSIDL_GET_MSG_TYPE_SUPPORT(uveec_custom_interfaces, msg, RaspberrySensorsInterface),
+	"raspberry_sensors_topic"));
 
   // create executor (subscribing)
   RCCHECK(rclc_executor_init(&executor, &support.context, 1, &allocator));
@@ -1296,45 +1330,103 @@ void StartDefaultTask(void *argument)
   for(;;)
   {
 	// publish to the topic
-    rcl_ret_t ret = rcl_publish(&publisher, &pub_msg, NULL);
-    if (ret != RCL_RET_OK)
-    {
-      printf("Error publishing (line %d)\n", __LINE__);
-    }
+	rcl_ret_t ret = rcl_publish(&publisher, &pub_msg, NULL);
+	if (ret != RCL_RET_OK)
+	{
+	  printf("Error publishing (line %d)\n", __LINE__);
+	}
 
-    // counter
-    // TODO pub_msg.data++;
-    osDelay(200);
+	// counter
+	// TODO pub_msg.data++;
+	osDelay(200);
 
-    // spin executor to subscribe to topic
-    RCCHECK(rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100)));
+	// spin executor to subscribe to topic
+	RCCHECK(rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100)));
 
-    // blink the counter by the data received from the topic
-    while (blinkCounter > 0)
-      {
+	// blink the counter by the data received from the topic
+	while (blinkCounter > 0)
+	  {
 
-        //HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
-        //osDelay(200);
-        //HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-        //osDelay(200);
-        //blinkCounter -= 1;
-    	blinkCounter -= 1;
-      }
+		//HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+		//osDelay(200);
+		//HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+		//osDelay(200);
+		//blinkCounter -= 1;
+		blinkCounter -= 1;
+	  }
   }
-
-  /* USER CODE END 5 */
+  /* USER CODE END start_task_ros_spin */
 }
 
-/* USER CODE BEGIN Header_StartActuate */
+/* USER CODE BEGIN Header_start_task_sensors */
 /**
-* @brief Function implementing the Actuate thread.
+* @brief Function implementing the task_sensors thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_StartActuate */
-void StartActuate(void *argument)
+/* USER CODE END Header_start_task_sensors */
+void start_task_sensors(void *argument)
 {
-  /* USER CODE BEGIN StartActuate */
+  /* USER CODE BEGIN start_task_sensors */
+
+  TickType_t xLastWakeTime;
+  //50Hz polling frequency = run task every 1/50Hz = 20ms = 20 ticks
+  const TickType_t xFrequency = 20;
+
+  // Initialise the VL53L0X
+  statInfo_t_VL53L0X distanceStr;
+
+  hi2c1.Instance = I2C1;
+  hi2c1.Init.ClockSpeed = 100000;
+  hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
+  hi2c1.Init.OwnAddress1 = 0;
+  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c1.Init.OwnAddress2 = 0;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+
+  initVL53L0X(1, &hi2c1);
+
+  // Configure the sensor for high accuracy and speed in 20 cm.
+  setSignalRateLimit(200);
+  setVcselPulsePeriod(VcselPeriodPreRange, 10);
+  setVcselPulsePeriod(VcselPeriodFinalRange, 14);
+  setMeasurementTimingBudget(300 * 1000UL);
+
+  // Initialise the xLastWakeTime variable with the current time.
+  xLastWakeTime = xTaskGetTickCount ();
+
+  for(;;)
+  {
+	// Wait for the next cycle.
+	vTaskDelayUntil( &xLastWakeTime, xFrequency );
+
+	/* Read sensors */
+	//TOF
+	// uint16_t distance is the distance in millimeters.
+	// statInfo_t_VL53L0X distanceStr is the statistics read from the sensor.
+	distance = readRangeSingleMillimeters(&distanceStr);
+	pub_msg.pitchencoder = distance;
+  }
+  /* USER CODE END start_task_sensors */
+}
+
+/* USER CODE BEGIN Header_start_task_actuators */
+/**
+* @brief Function implementing the task_actuators thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_start_task_actuators */
+void start_task_actuators(void *argument)
+{
+  /* USER CODE BEGIN start_task_actuators */
+
+  TickType_t xLastWakeTime;
+  //50Hz polling frequency = run task every 1/100Hz = 10ms = 10 ticks
+  const TickType_t xFrequency = 10;
+
   HAL_GPIO_WritePin(Pitch_En_3V3_GPIO_Port, Pitch_En_3V3_Pin, GPIO_PIN_SET);
 
   if (distance < min_tof_distance) {
@@ -1355,9 +1447,16 @@ void StartActuate(void *argument)
   osDelay(250);
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
 
+  // Initialise the xLastWakeTime variable with the current time.
+  xLastWakeTime = xTaskGetTickCount ();
+
   /* Infinite loop */
   for(;;)
   {
+	  // Wait for the next cycle.
+	  vTaskDelayUntil( &xLastWakeTime, xFrequency );
+
+	  /* Actuators*/
 	  if (distance < min_tof_distance) {
 		  change_pitch_direction(0);
 	  }
@@ -1367,99 +1466,32 @@ void StartActuate(void *argument)
 	  if (HAL_GPIO_ReadPin(Usr_Btn_GPIO_Port, Usr_Btn_Pin) == GPIO_PIN_RESET) {
 		  // Button is pressed
 		  if (pitch_direction == 1) {
-		  		  change_pitch_direction(0);
-		  	  }
-		  	  else if (pitch_direction == 0) {
-		  		  change_pitch_direction(1);
-		  	  }
+				  change_pitch_direction(0);
+			  }
+			  else if (pitch_direction == 0) {
+				  change_pitch_direction(1);
+			  }
 	  }
   }
-  /* USER CODE END StartActuate */
+  /* USER CODE END start_task_actuators */
 }
 
-/* USER CODE BEGIN Header_StartDistTask */
+/* USER CODE BEGIN Header_start_task_watchdog */
 /**
-* @brief Function implementing the tosDistTask thread.
+* @brief Function implementing the task_watchdog thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_StartDistTask */
-void StartDistTask(void *argument)
+/* USER CODE END Header_start_task_watchdog */
+void start_task_watchdog(void *argument)
 {
-  /* USER CODE BEGIN StartDistTask */
-
-	// Initialise the VL53L0X
-	statInfo_t_VL53L0X distanceStr;
-
-	  hi2c1.Instance = I2C1;
-	  hi2c1.Init.ClockSpeed = 100000;
-	  hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
-	  hi2c1.Init.OwnAddress1 = 0;
-	  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
-	  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-	  hi2c1.Init.OwnAddress2 = 0;
-	  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-	  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
-
-	initVL53L0X(1, &hi2c1);
-
-	// Configure the sensor for high accuracy and speed in 20 cm.
-	setSignalRateLimit(200);
-	setVcselPulsePeriod(VcselPeriodPreRange, 10);
-	setVcselPulsePeriod(VcselPeriodFinalRange, 14);
-	setMeasurementTimingBudget(300 * 1000UL);
-
+  /* USER CODE BEGIN start_task_watchdog */
   /* Infinite loop */
   for(;;)
   {
-	// uint16_t distance is the distance in millimeters.
-	// statInfo_t_VL53L0X distanceStr is the statistics read from the sensor.
-	distance = readRangeSingleMillimeters(&distanceStr);
-	pub_msg.pitchencoder = distance;
-
-	osDelay(1);
+    osDelay(1);
   }
-  /* USER CODE END StartDistTask */
-}
-
-/* USER CODE BEGIN Header_StartRollTask */
-/**
-* @brief Function implementing the rollEncoderTask thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_StartRollTask */
-void StartRollTask(void *argument)
-{
-  /* USER CODE BEGIN StartRollTask */
-	HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1);
-	CAN_TxHeaderTypeDef   TxHeader;
-  uint8_t               TxData[8];
-  uint32_t              TxMailbox;
-
-  TxHeader.IDE = CAN_ID_STD;
-  TxHeader.StdId = 0x1;
-  TxHeader.RTR = CAN_RTR_DATA;
-  TxHeader.DLC = 4;
-
-  TxData[0] = 0x04; //Data length
-  TxData[1] = 0x01; //Encoder address(default 0x01)
-  TxData[2] = 0x04; //Instruction code(0x04 = Set the encoder mode
-  TxData[3] = 0xAA; //Automatic return mode
-  /* Infinite loop */
-  for(;;)
-  {
-	  if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox) != HAL_OK)
-	  {
-	     Error_Handler ();
-	  }
-
-	  TIM11->CCR1 = 10000;
-    osDelay(500);
-    TIM11->CCR1 = 0;
-    osDelay(500);
-  }
-  /* USER CODE END StartRollTask */
+  /* USER CODE END start_task_watchdog */
 }
 
 /**
