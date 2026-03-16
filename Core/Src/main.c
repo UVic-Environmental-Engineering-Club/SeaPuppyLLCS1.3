@@ -303,19 +303,19 @@ float get_angle_deg(void) {
 int change_pitch_direction(int dir) {
 	if (pitch_direction == 0 && dir == 1) { // pitch motor is getting closer to tof
 		HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_4);
-		HAL_Delay(100);
+		osDelay(100);
 		HAL_GPIO_WritePin(Pitch_Dir_3V3_GPIO_Port, Pitch_Dir_3V3_Pin, GPIO_PIN_SET);
 		//HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
-		HAL_Delay(100);
+		osDelay(100);
 		HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
 		pitch_direction = 1;
 		return 1;
 	} else if (pitch_direction == 1 && dir == 0) { // pitch motor is getting further from tof
 		HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_4);
-		HAL_Delay(100);
+		osDelay(100);
 		HAL_GPIO_WritePin(Pitch_Dir_3V3_GPIO_Port, Pitch_Dir_3V3_Pin, GPIO_PIN_RESET);
 		//HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
-		HAL_Delay(100);
+		osDelay(100);
 		HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
 		pitch_direction = 0;
 		return 0;
@@ -1430,17 +1430,17 @@ void start_task_actuators(void *argument)
 
   if (distance < min_tof_distance) {
 		pitch_direction = 1;
-		HAL_Delay(100);
+		osDelay(100);
 		HAL_GPIO_WritePin(Pitch_Dir_3V3_GPIO_Port, Pitch_Dir_3V3_Pin, GPIO_PIN_SET);
 		//HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
-		HAL_Delay(100);
+		osDelay(100);
   }
   else {
 		pitch_direction = 0;
-		HAL_Delay(100);
+		osDelay(100);
 		HAL_GPIO_WritePin(Pitch_Dir_3V3_GPIO_Port, Pitch_Dir_3V3_Pin, GPIO_PIN_RESET);
 		//HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
-		HAL_Delay(100);
+		osDelay(100);
   }
 
   osDelay(250);
