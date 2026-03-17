@@ -371,7 +371,16 @@ int main(void)
   MX_CAN1_Init();
   /* USER CODE BEGIN 2 */
 
+  //Onboard LED Green(D2)
   HAL_TIM_PWM_Start(&htim11, TIM_CHANNEL_1);
+  TIM11->CCR1 = 0;
+
+  //Onboard LED Red(D3)
+  HAL_TIM_PWM_Start(&htim13, TIM_CHANNEL_1);
+  TIM13->CCR1 = 0;
+  //Onboard LED Red(D3)
+  HAL_TIM_PWM_Start(&htim14, TIM_CHANNEL_1);
+  TIM14->CCR1 = 0;
 
   //Quick startup blink sequence
   while (blinkCounter > 0)
@@ -1399,6 +1408,7 @@ void start_task_sensors(void *argument)
   {
 	// Wait for the next cycle.
 	vTaskDelayUntil( &xLastWakeTime, xFrequency );
+	TIM13->CCR1 = 65535;
 
 	/* Read sensors */
 	//TOF
@@ -1406,6 +1416,7 @@ void start_task_sensors(void *argument)
 	// statInfo_t_VL53L0X distanceStr is the statistics read from the sensor.
 	distance = readRangeSingleMillimeters(&distanceStr);
 	pub_msg.pitchencoder = distance;
+	TIM13->CCR1 = 0;
   }
   /* USER CODE END start_task_sensors */
 }
@@ -1454,6 +1465,7 @@ void start_task_actuators(void *argument)
   {
 	  // Wait for the next cycle.
 	  vTaskDelayUntil( &xLastWakeTime, xFrequency );
+	  TIM14->CCR1 = 65535;
 
 	  /* Actuators*/
 	  if (distance < min_tof_distance) {
@@ -1471,6 +1483,7 @@ void start_task_actuators(void *argument)
 				  change_pitch_direction(1);
 			  }
 	  }
+	  TIM14->CCR1 = 0;
   }
   /* USER CODE END start_task_actuators */
 }
