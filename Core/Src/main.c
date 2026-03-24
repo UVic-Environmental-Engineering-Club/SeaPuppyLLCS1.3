@@ -67,8 +67,6 @@ typedef StaticTask_t osStaticThreadDef_t;
 ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc2;
 
-CAN_HandleTypeDef hcan1;
-
 I2C_HandleTypeDef hi2c1;
 
 TIM_HandleTypeDef htim2;
@@ -178,13 +176,6 @@ volatile float rpm = 0;
 uint16_t distance;
 int pitch_direction = 0;
 
-int can_error = -1;
-
-uint32_t encoderValue = 0;
-
-//CAN RX Data
-CAN_RxHeaderTypeDef   RxHeader;
-uint8_t               RxData[8];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -203,7 +194,6 @@ static void MX_TIM10_Init(void);
 static void MX_TIM11_Init(void);
 static void MX_TIM13_Init(void);
 static void MX_TIM14_Init(void);
-static void MX_CAN1_Init(void);
 void StartDefaultTask(void *argument);
 void start_task_ros_spin(void *argument);
 void start_task_sensors(void *argument);
@@ -218,20 +208,6 @@ void error_loop(){}
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
-//CAN RX Callback
-void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
-{
-  if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  if(RxData[2] == 0x01){
-	  encoderValue = RxData[5] + (RxData[4] >> 8) + (RxData[4] >> 16);
-  }
-
-}
 
 // subscription_callback. Triggered by subscriber executor
 void subscription_callback(const void * msgin)
@@ -368,7 +344,6 @@ int main(void)
   MX_TIM11_Init();
   MX_TIM13_Init();
   MX_TIM14_Init();
-  MX_CAN1_Init();
   /* USER CODE BEGIN 2 */
 
   //Onboard LED Green(D2)
@@ -381,17 +356,6 @@ int main(void)
   //Onboard LED Red(D3)
   HAL_TIM_PWM_Start(&htim14, TIM_CHANNEL_1);
   TIM14->CCR1 = 0;
-
-  //Quick startup blink sequence
-  while (blinkCounter > 0)
-  {
-	TIM11->CCR1 = 10000;
-	HAL_Delay(100);
-	TIM11->CCR1 = 0;
-	HAL_Delay(100);
-	blinkCounter -= 1;
-  }
-  TIM11->CCR1 = 10000;
 
   /* USER CODE END 2 */
 
@@ -602,57 +566,6 @@ static void MX_ADC2_Init(void)
   /* USER CODE BEGIN ADC2_Init 2 */
 
   /* USER CODE END ADC2_Init 2 */
-
-}
-
-/**
-  * @brief CAN1 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_CAN1_Init(void)
-{
-
-  /* USER CODE BEGIN CAN1_Init 0 */
-
-  /* USER CODE END CAN1_Init 0 */
-
-  /* USER CODE BEGIN CAN1_Init 1 */
-
-  /* USER CODE END CAN1_Init 1 */
-  hcan1.Instance = CAN1;
-  hcan1.Init.Prescaler = 16;
-  hcan1.Init.Mode = CAN_MODE_LOOPBACK;
-  hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan1.Init.TimeSeg1 = CAN_BS1_1TQ;
-  hcan1.Init.TimeSeg2 = CAN_BS2_1TQ;
-  hcan1.Init.TimeTriggeredMode = DISABLE;
-  hcan1.Init.AutoBusOff = DISABLE;
-  hcan1.Init.AutoWakeUp = DISABLE;
-  hcan1.Init.AutoRetransmission = DISABLE;
-  hcan1.Init.ReceiveFifoLocked = DISABLE;
-  hcan1.Init.TransmitFifoPriority = DISABLE;
-  if (HAL_CAN_Init(&hcan1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN CAN1_Init 2 */
-  //Enable CAN RX Interrupt
-  if (HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK)
-  {
-	  Error_Handler();
-  }
-
-  HAL_GPIO_WritePin(En_24V_ADC_GPIO_Port, Enable_24V_Pin, GPIO_PIN_RESET);
-
-  HAL_Delay(500);
-
-  if (HAL_CAN_Start(&hcan1) != HAL_OK)
-	{
-	  can_error = HAL_CAN_GetError(&hcan1);
-	  Error_Handler();
-	}
-  /* USER CODE END CAN1_Init 2 */
 
 }
 
@@ -1151,10 +1064,11 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOG_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOF, Pitch_En_3V3_Pin|Pitch_Dir_3V3_Pin|Roll_DIR_Pin|En_24V_ADC_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, Pump_Dir_Pin|Brake_En_Pin|Enable_24V_Pin|Enable_11V_Pin
+                          |Pump_En_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, Brake_En_Pin|Enable_24V_Pin|Enable_11V_Pin|Pump_Dir_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOF, Pitch_En_3V3_Pin|Pitch_Dir_3V3_Pin|Roll_DIR_Pin|En_24V_ADC_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
@@ -1165,11 +1079,14 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(CAN_Set_Zero_GPIO_Port, CAN_Set_Zero_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : Usr_Btn_Pin */
-  GPIO_InitStruct.Pin = Usr_Btn_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(Usr_Btn_GPIO_Port, &GPIO_InitStruct);
+  /*Configure GPIO pins : Pump_Dir_Pin Brake_En_Pin Enable_24V_Pin Enable_11V_Pin
+                           Pump_En_Pin */
+  GPIO_InitStruct.Pin = Pump_Dir_Pin|Brake_En_Pin|Enable_24V_Pin|Enable_11V_Pin
+                          |Pump_En_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pins : Pitch_En_3V3_Pin Pitch_Dir_3V3_Pin Roll_DIR_Pin En_24V_ADC_Pin */
   GPIO_InitStruct.Pin = Pitch_En_3V3_Pin|Pitch_Dir_3V3_Pin|Roll_DIR_Pin|En_24V_ADC_Pin;
@@ -1177,13 +1094,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : Brake_En_Pin Enable_24V_Pin Enable_11V_Pin Pump_Dir_Pin */
-  GPIO_InitStruct.Pin = Brake_En_Pin|Enable_24V_Pin|Enable_11V_Pin|Pump_Dir_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PB0 */
   GPIO_InitStruct.Pin = GPIO_PIN_0;
@@ -1210,6 +1120,14 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(USB_OverCurrent_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PD0 PD1 */
+  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  GPIO_InitStruct.Alternate = GPIO_AF9_CAN1;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
   /*Configure GPIO pin : CAN_Set_Zero_Pin */
   GPIO_InitStruct.Pin = CAN_Set_Zero_Pin;
@@ -1409,6 +1327,7 @@ void start_task_sensors(void *argument)
 	// Wait for the next cycle.
 	vTaskDelayUntil( &xLastWakeTime, xFrequency );
 	TIM13->CCR1 = 65535;
+	osDelay(1);
 
 	/* Read sensors */
 	//TOF
@@ -1457,6 +1376,14 @@ void start_task_actuators(void *argument)
   osDelay(250);
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
 
+  TIM11->CCR1 = 65535;
+  //TIM11->CCR1 = 10000;
+
+  HAL_GPIO_WritePin(Pump_Dir_GPIO_Port, Pump_Dir_Pin, GPIO_PIN_SET); // Direction (Low for forward convention, high for reverse)
+
+  HAL_GPIO_WritePin(Pump_En_GPIO_Port, Pump_En_Pin, GPIO_PIN_SET); // Enable (High for enable, low for off)
+
+  HAL_GPIO_WritePin(CAN_Set_Zero_GPIO_Port, CAN_Set_Zero_Pin, GPIO_PIN_SET);
   // Initialise the xLastWakeTime variable with the current time.
   xLastWakeTime = xTaskGetTickCount ();
 
@@ -1467,6 +1394,17 @@ void start_task_actuators(void *argument)
 	  vTaskDelayUntil( &xLastWakeTime, xFrequency );
 	  TIM14->CCR1 = 65535;
 
+	  HAL_GPIO_WritePin(Pump_En_GPIO_Port, Pump_En_Pin, GPIO_PIN_SET);
+	  osDelay(4000);
+	  HAL_GPIO_WritePin(Pump_En_GPIO_Port, Pump_En_Pin, GPIO_PIN_RESET);
+	  HAL_GPIO_WritePin(Pump_Dir_GPIO_Port, Pump_Dir_Pin, GPIO_PIN_RESET);
+	  osDelay(4000);
+	  HAL_GPIO_WritePin(Pump_En_GPIO_Port, Pump_En_Pin, GPIO_PIN_SET);
+	  osDelay(4000);
+	  HAL_GPIO_WritePin(Pump_En_GPIO_Port, Pump_En_Pin, GPIO_PIN_RESET);
+	  HAL_GPIO_WritePin(Pump_Dir_GPIO_Port, Pump_Dir_Pin, GPIO_PIN_SET);
+	  osDelay(4000);
+
 	  /* Actuators*/
 	  if (distance < min_tof_distance) {
 		  change_pitch_direction(0);
@@ -1474,6 +1412,7 @@ void start_task_actuators(void *argument)
 	  else if (distance > max_tof_distance) {
 		  change_pitch_direction(1);
 	  }
+	  /*
 	  if (HAL_GPIO_ReadPin(Usr_Btn_GPIO_Port, Usr_Btn_Pin) == GPIO_PIN_RESET) {
 		  // Button is pressed
 		  if (pitch_direction == 1) {
@@ -1483,6 +1422,7 @@ void start_task_actuators(void *argument)
 				  change_pitch_direction(1);
 			  }
 	  }
+	  */
 	  TIM14->CCR1 = 0;
   }
   /* USER CODE END start_task_actuators */

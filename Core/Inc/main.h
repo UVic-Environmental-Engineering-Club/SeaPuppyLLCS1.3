@@ -59,8 +59,8 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define Usr_Btn_Pin GPIO_PIN_13
-#define Usr_Btn_GPIO_Port GPIOC
+#define Pump_Dir_Pin GPIO_PIN_13
+#define Pump_Dir_GPIO_Port GPIOC
 #define Pitch_En_3V3_Pin GPIO_PIN_0
 #define Pitch_En_3V3_GPIO_Port GPIOF
 #define Pitch_Dir_3V3_Pin GPIO_PIN_1
@@ -71,8 +71,8 @@ void Error_Handler(void);
 #define En_24V_ADC_GPIO_Port GPIOF
 #define Green_OB_LED1_Pin GPIO_PIN_6
 #define Green_OB_LED1_GPIO_Port GPIOF
-#define Green_OB_LED2_Pin GPIO_PIN_7
-#define Green_OB_LED2_GPIO_Port GPIOF
+#define PWM_3V3_Pin GPIO_PIN_7
+#define PWM_3V3_GPIO_Port GPIOF
 #define Red_OB_LED1_Pin GPIO_PIN_8
 #define Red_OB_LED1_GPIO_Port GPIOF
 #define Red_OB_LED2_Pin GPIO_PIN_9
@@ -117,8 +117,8 @@ void Error_Handler(void);
 #define TMS_GPIO_Port GPIOA
 #define TCK_Pin GPIO_PIN_14
 #define TCK_GPIO_Port GPIOA
-#define Pump_Dir_Pin GPIO_PIN_12
-#define Pump_Dir_GPIO_Port GPIOC
+#define Pump_En_Pin GPIO_PIN_12
+#define Pump_En_GPIO_Port GPIOC
 #define CAN_Set_Zero_Pin GPIO_PIN_2
 #define CAN_Set_Zero_GPIO_Port GPIOD
 #define Roll_Hall_Pin GPIO_PIN_3
