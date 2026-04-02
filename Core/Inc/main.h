@@ -59,20 +59,14 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define Pump_Dir_Pin GPIO_PIN_13
-#define Pump_Dir_GPIO_Port GPIOC
-#define Pitch_En_3V3_Pin GPIO_PIN_0
-#define Pitch_En_3V3_GPIO_Port GPIOF
-#define Pitch_Dir_3V3_Pin GPIO_PIN_1
-#define Pitch_Dir_3V3_GPIO_Port GPIOF
+#define Pitch_Dir_3V3_Pin GPIO_PIN_13
+#define Pitch_Dir_3V3_GPIO_Port GPIOC
 #define Roll_DIR_Pin GPIO_PIN_3
 #define Roll_DIR_GPIO_Port GPIOF
 #define En_24V_ADC_Pin GPIO_PIN_5
 #define En_24V_ADC_GPIO_Port GPIOF
 #define Green_OB_LED1_Pin GPIO_PIN_6
 #define Green_OB_LED1_GPIO_Port GPIOF
-#define PWM_3V3_Pin GPIO_PIN_7
-#define PWM_3V3_GPIO_Port GPIOF
 #define Red_OB_LED1_Pin GPIO_PIN_8
 #define Red_OB_LED1_GPIO_Port GPIOF
 #define Red_OB_LED2_Pin GPIO_PIN_9
@@ -95,10 +89,6 @@ void Error_Handler(void);
 #define UART3_TX_GPIO_Port GPIOD
 #define UART3_RX_Pin GPIO_PIN_9
 #define UART3_RX_GPIO_Port GPIOD
-#define Pump_Pul_3V3_Pin GPIO_PIN_14
-#define Pump_Pul_3V3_GPIO_Port GPIOD
-#define Pitch_Pul_3V3_Pin GPIO_PIN_15
-#define Pitch_Pul_3V3_GPIO_Port GPIOD
 #define USB_PowerSwitchOn_Pin GPIO_PIN_6
 #define USB_PowerSwitchOn_GPIO_Port GPIOG
 #define USB_OverCurrent_Pin GPIO_PIN_7
@@ -117,10 +107,10 @@ void Error_Handler(void);
 #define TMS_GPIO_Port GPIOA
 #define TCK_Pin GPIO_PIN_14
 #define TCK_GPIO_Port GPIOA
-#define Pump_En_Pin GPIO_PIN_12
-#define Pump_En_GPIO_Port GPIOC
-#define CAN_Set_Zero_Pin GPIO_PIN_2
-#define CAN_Set_Zero_GPIO_Port GPIOD
+#define Pitch_En_3V3_Pin GPIO_PIN_12
+#define Pitch_En_3V3_GPIO_Port GPIOC
+#define en_24V_Pin GPIO_PIN_2
+#define en_24V_GPIO_Port GPIOD
 #define Roll_Hall_Pin GPIO_PIN_3
 #define Roll_Hall_GPIO_Port GPIOB
 #define TOF_SCL_Pin GPIO_PIN_6

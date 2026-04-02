@@ -278,21 +278,25 @@ float get_angle_deg(void) {
 
 int change_pitch_direction(int dir) {
 	if (pitch_direction == 0 && dir == 1) { // pitch motor is getting closer to tof
-		HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_4);
+		//HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_4);
+		HAL_TIM_PWM_Stop(&htim11, TIM_CHANNEL_1);
 		osDelay(100);
 		HAL_GPIO_WritePin(Pitch_Dir_3V3_GPIO_Port, Pitch_Dir_3V3_Pin, GPIO_PIN_SET);
 		//HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
 		osDelay(100);
-		HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
+		//HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
+		HAL_TIM_PWM_Start(&htim11, TIM_CHANNEL_1);
 		pitch_direction = 1;
 		return 1;
 	} else if (pitch_direction == 1 && dir == 0) { // pitch motor is getting further from tof
-		HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_4);
+		//HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_4);
+		HAL_TIM_PWM_Stop(&htim11, TIM_CHANNEL_1);
 		osDelay(100);
 		HAL_GPIO_WritePin(Pitch_Dir_3V3_GPIO_Port, Pitch_Dir_3V3_Pin, GPIO_PIN_RESET);
 		//HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
 		osDelay(100);
-		HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
+		//HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
+		HAL_TIM_PWM_Start(&htim11, TIM_CHANNEL_1);
 		pitch_direction = 0;
 		return 0;
 	}
@@ -347,8 +351,8 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   //Onboard LED Green(D2)
-  HAL_TIM_PWM_Start(&htim11, TIM_CHANNEL_1);
-  TIM11->CCR1 = 0;
+  //HAL_TIM_PWM_Start(&htim11, TIM_CHANNEL_1);
+  //TIM11->CCR1 = 0;
 
   //Onboard LED Red(D3)
   HAL_TIM_PWM_Start(&htim13, TIM_CHANNEL_1);
@@ -689,7 +693,6 @@ static void MX_TIM4_Init(void)
 
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
-  TIM_OC_InitTypeDef sConfigOC = {0};
 
   /* USER CODE BEGIN TIM4_Init 1 */
 
@@ -709,32 +712,15 @@ static void MX_TIM4_Init(void)
   {
     Error_Handler();
   }
-  if (HAL_TIM_PWM_Init(&htim4) != HAL_OK)
-  {
-    Error_Handler();
-  }
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig) != HAL_OK)
   {
     Error_Handler();
   }
-  sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 32765;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
-  {
-    Error_Handler();
-  }
   /* USER CODE BEGIN TIM4_Init 2 */
 
   /* USER CODE END TIM4_Init 2 */
-  HAL_TIM_MspPostInit(&htim4);
 
 }
 
@@ -1064,11 +1050,11 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOG_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, Pump_Dir_Pin|Brake_En_Pin|Enable_24V_Pin|Enable_11V_Pin
-                          |Pump_En_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, Pitch_Dir_3V3_Pin|Brake_En_Pin|Enable_24V_Pin|Enable_11V_Pin
+                          |Pitch_En_3V3_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOF, Pitch_En_3V3_Pin|Pitch_Dir_3V3_Pin|Roll_DIR_Pin|En_24V_ADC_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOF, Roll_DIR_Pin|En_24V_ADC_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
@@ -1077,19 +1063,19 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(USB_PowerSwitchOn_GPIO_Port, USB_PowerSwitchOn_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(CAN_Set_Zero_GPIO_Port, CAN_Set_Zero_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(en_24V_GPIO_Port, en_24V_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : Pump_Dir_Pin Brake_En_Pin Enable_24V_Pin Enable_11V_Pin
-                           Pump_En_Pin */
-  GPIO_InitStruct.Pin = Pump_Dir_Pin|Brake_En_Pin|Enable_24V_Pin|Enable_11V_Pin
-                          |Pump_En_Pin;
+  /*Configure GPIO pins : Pitch_Dir_3V3_Pin Brake_En_Pin Enable_24V_Pin Enable_11V_Pin
+                           Pitch_En_3V3_Pin */
+  GPIO_InitStruct.Pin = Pitch_Dir_3V3_Pin|Brake_En_Pin|Enable_24V_Pin|Enable_11V_Pin
+                          |Pitch_En_3V3_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : Pitch_En_3V3_Pin Pitch_Dir_3V3_Pin Roll_DIR_Pin En_24V_ADC_Pin */
-  GPIO_InitStruct.Pin = Pitch_En_3V3_Pin|Pitch_Dir_3V3_Pin|Roll_DIR_Pin|En_24V_ADC_Pin;
+  /*Configure GPIO pins : Roll_DIR_Pin En_24V_ADC_Pin */
+  GPIO_InitStruct.Pin = Roll_DIR_Pin|En_24V_ADC_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -1121,20 +1107,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(USB_OverCurrent_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PD0 PD1 */
-  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-  GPIO_InitStruct.Alternate = GPIO_AF9_CAN1;
-  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : CAN_Set_Zero_Pin */
-  GPIO_InitStruct.Pin = CAN_Set_Zero_Pin;
+  /*Configure GPIO pin : en_24V_Pin */
+  GPIO_InitStruct.Pin = en_24V_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(CAN_Set_Zero_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(en_24V_GPIO_Port, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
@@ -1311,6 +1289,8 @@ void start_task_sensors(void *argument)
   hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
   hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
 
+  TIM13->CCR1 = 0;
+
   initVL53L0X(1, &hi2c1);
 
   // Configure the sensor for high accuracy and speed in 20 cm.
@@ -1319,6 +1299,8 @@ void start_task_sensors(void *argument)
   setVcselPulsePeriod(VcselPeriodFinalRange, 14);
   setMeasurementTimingBudget(300 * 1000UL);
 
+  TIM13->CCR1 = 65535;
+
   // Initialise the xLastWakeTime variable with the current time.
   xLastWakeTime = xTaskGetTickCount ();
 
@@ -1326,7 +1308,7 @@ void start_task_sensors(void *argument)
   {
 	// Wait for the next cycle.
 	vTaskDelayUntil( &xLastWakeTime, xFrequency );
-	TIM13->CCR1 = 65535;
+	//TIM13->CCR1 = 65535;
 	osDelay(1);
 
 	/* Read sensors */
@@ -1334,8 +1316,11 @@ void start_task_sensors(void *argument)
 	// uint16_t distance is the distance in millimeters.
 	// statInfo_t_VL53L0X distanceStr is the statistics read from the sensor.
 	distance = readRangeSingleMillimeters(&distanceStr);
+
+	//TIM13->CCR1 = distance*2;
+
 	pub_msg.pitchencoder = distance;
-	TIM13->CCR1 = 0;
+	//TIM13->CCR1 = 0;
   }
   /* USER CODE END start_task_sensors */
 }
@@ -1358,6 +1343,10 @@ void start_task_actuators(void *argument)
   //Pitch Motor Actuation Setup
   HAL_GPIO_WritePin(Pitch_En_3V3_GPIO_Port, Pitch_En_3V3_Pin, GPIO_PIN_SET);
 
+  HAL_GPIO_WritePin(en_24V_GPIO_Port, en_24V_Pin, GPIO_PIN_SET);
+
+  osDelay(500);
+  /*
   if (distance < min_tof_distance) {
 		pitch_direction = 1;
 		osDelay(100);
@@ -1372,18 +1361,16 @@ void start_task_actuators(void *argument)
 		//HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
 		osDelay(100);
   }
+  */
+  pitch_direction = 1;
+  change_pitch_direction(0);
 
-  osDelay(250);
-  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
+  //HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
+  HAL_TIM_PWM_Start(&htim11, TIM_CHANNEL_1);
 
-  TIM11->CCR1 = 65535;
+  TIM11->CCR1 = 65535/2;
   //TIM11->CCR1 = 10000;
 
-  HAL_GPIO_WritePin(Pump_Dir_GPIO_Port, Pump_Dir_Pin, GPIO_PIN_SET); // Direction (Low for forward convention, high for reverse)
-
-  HAL_GPIO_WritePin(Pump_En_GPIO_Port, Pump_En_Pin, GPIO_PIN_SET); // Enable (High for enable, low for off)
-
-  HAL_GPIO_WritePin(CAN_Set_Zero_GPIO_Port, CAN_Set_Zero_Pin, GPIO_PIN_SET);
   // Initialise the xLastWakeTime variable with the current time.
   xLastWakeTime = xTaskGetTickCount ();
 
@@ -1392,20 +1379,14 @@ void start_task_actuators(void *argument)
   {
 	  // Wait for the next cycle.
 	  vTaskDelayUntil( &xLastWakeTime, xFrequency );
-	  TIM14->CCR1 = 65535;
 
-	  HAL_GPIO_WritePin(Pump_En_GPIO_Port, Pump_En_Pin, GPIO_PIN_SET);
-	  osDelay(4000);
-	  HAL_GPIO_WritePin(Pump_En_GPIO_Port, Pump_En_Pin, GPIO_PIN_RESET);
-	  HAL_GPIO_WritePin(Pump_Dir_GPIO_Port, Pump_Dir_Pin, GPIO_PIN_RESET);
-	  osDelay(4000);
-	  HAL_GPIO_WritePin(Pump_En_GPIO_Port, Pump_En_Pin, GPIO_PIN_SET);
-	  osDelay(4000);
-	  HAL_GPIO_WritePin(Pump_En_GPIO_Port, Pump_En_Pin, GPIO_PIN_RESET);
-	  HAL_GPIO_WritePin(Pump_Dir_GPIO_Port, Pump_Dir_Pin, GPIO_PIN_SET);
-	  osDelay(4000);
+	  osDelay(2000);
+	  change_pitch_direction(1);
+	  osDelay(2000);
+	  change_pitch_direction(0);
 
-	  /* Actuators*/
+
+	  /* Actuators
 	  if (distance < min_tof_distance) {
 		  change_pitch_direction(0);
 	  }
@@ -1423,7 +1404,7 @@ void start_task_actuators(void *argument)
 			  }
 	  }
 	  */
-	  TIM14->CCR1 = 0;
+	  //TIM14->CCR1 = 0;
   }
   /* USER CODE END start_task_actuators */
 }
