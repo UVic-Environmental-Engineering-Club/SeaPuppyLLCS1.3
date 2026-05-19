@@ -161,8 +161,8 @@ uveec_custom_interfaces__msg__RaspberrySensorsInterface sub_msg;
 
 const unsigned int timer_period = RCL_MS_TO_NS(10);
 const int timeout_ms = 1000;
-const float min_tof_distance = 40.7;
-const float max_tof_distance = 161.6;
+const float min_tof_distance = 20;
+const float max_tof_distance = 140;
 
 int32_t blinkCounter = 5;
 float depthsensor = 0;
@@ -693,6 +693,7 @@ static void MX_TIM4_Init(void)
 
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
 
   /* USER CODE BEGIN TIM4_Init 1 */
 
@@ -712,15 +713,28 @@ static void MX_TIM4_Init(void)
   {
     Error_Handler();
   }
+  if (HAL_TIM_PWM_Init(&htim4) != HAL_OK)
+  {
+    Error_Handler();
+  }
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig) != HAL_OK)
   {
     Error_Handler();
   }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 0;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
+  {
+    Error_Handler();
+  }
   /* USER CODE BEGIN TIM4_Init 2 */
 
   /* USER CODE END TIM4_Init 2 */
+  HAL_TIM_MspPostInit(&htim4);
 
 }
 
@@ -1279,17 +1293,9 @@ void start_task_sensors(void *argument)
   // Initialise the VL53L0X TOF Sensor
   statInfo_t_VL53L0X distanceStr;
 
-  hi2c1.Instance = I2C1;
-  hi2c1.Init.ClockSpeed = 100000;
-  hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
-  hi2c1.Init.OwnAddress1 = 0;
-  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
-  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-  hi2c1.Init.OwnAddress2 = 0;
-  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
-
   TIM13->CCR1 = 0;
+
+  osDelay(100);
 
   initVL53L0X(1, &hi2c1);
 
@@ -1340,35 +1346,19 @@ void start_task_actuators(void *argument)
   //50Hz polling frequency = run task every 1/100Hz = 10ms = 10 ticks
   const TickType_t xFrequency = 10;
 
+  osDelay(5000);
+
   //Pitch Motor Actuation Setup
   HAL_GPIO_WritePin(Pitch_En_3V3_GPIO_Port, Pitch_En_3V3_Pin, GPIO_PIN_SET);
 
   HAL_GPIO_WritePin(en_24V_GPIO_Port, en_24V_Pin, GPIO_PIN_SET);
 
-  osDelay(500);
-  /*
-  if (distance < min_tof_distance) {
-		pitch_direction = 1;
-		osDelay(100);
-		HAL_GPIO_WritePin(Pitch_Dir_3V3_GPIO_Port, Pitch_Dir_3V3_Pin, GPIO_PIN_SET);
-		//HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
-		osDelay(100);
-  }
-  else {
-		pitch_direction = 0;
-		osDelay(100);
-		HAL_GPIO_WritePin(Pitch_Dir_3V3_GPIO_Port, Pitch_Dir_3V3_Pin, GPIO_PIN_RESET);
-		//HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
-		osDelay(100);
-  }
-  */
-  pitch_direction = 1;
   change_pitch_direction(0);
 
   //HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
   HAL_TIM_PWM_Start(&htim11, TIM_CHANNEL_1);
-
   TIM11->CCR1 = 65535/2;
+
   //TIM11->CCR1 = 10000;
 
   // Initialise the xLastWakeTime variable with the current time.
@@ -1380,18 +1370,25 @@ void start_task_actuators(void *argument)
 	  // Wait for the next cycle.
 	  vTaskDelayUntil( &xLastWakeTime, xFrequency );
 
-	  osDelay(2000);
+	  /*
+	  osDelay(5000);
 	  change_pitch_direction(1);
-	  osDelay(2000);
+	  HAL_TIM_PWM_Stop(&htim11, TIM_CHANNEL_1);
+	  osDelay(3000);
+	  HAL_TIM_PWM_Start(&htim11, TIM_CHANNEL_1);
+	  osDelay(5000);
 	  change_pitch_direction(0);
+	  HAL_TIM_PWM_Stop(&htim11, TIM_CHANNEL_1);
+	  osDelay(3000);
+	  HAL_TIM_PWM_Start(&htim11, TIM_CHANNEL_1);
+	*/
 
-
-	  /* Actuators
+	  // Actuators
 	  if (distance < min_tof_distance) {
-		  change_pitch_direction(0);
+		  change_pitch_direction(1);
 	  }
 	  else if (distance > max_tof_distance) {
-		  change_pitch_direction(1);
+		  change_pitch_direction(0);
 	  }
 	  /*
 	  if (HAL_GPIO_ReadPin(Usr_Btn_GPIO_Port, Usr_Btn_Pin) == GPIO_PIN_RESET) {
