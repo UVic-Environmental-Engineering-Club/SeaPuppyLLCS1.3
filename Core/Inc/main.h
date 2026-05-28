@@ -67,6 +67,8 @@ void Error_Handler(void);
 #define En_24V_ADC_GPIO_Port GPIOF
 #define Green_OB_LED1_Pin GPIO_PIN_6
 #define Green_OB_LED1_GPIO_Port GPIOF
+#define Pitch_Pwm_Pin GPIO_PIN_7
+#define Pitch_Pwm_GPIO_Port GPIOF
 #define Red_OB_LED1_Pin GPIO_PIN_8
 #define Red_OB_LED1_GPIO_Port GPIOF
 #define Red_OB_LED2_Pin GPIO_PIN_9
